@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gráfico de Resultados da Apuração - Goiana, PE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0; /* Remover margem padrão do body para o iframe */
+            padding: 0;
+            font-family: sans-serif; /* Definir uma fonte padrão */
+        }
+        .container-grafico {
+            width: 100%;
+            max-width: 500px; /* Largura máxima para o contêiner */
+            margin: 0 auto; /* Centralizar o container */
+            text-align: center;
+            padding: 10px; /* Espaçamento interno */
+            box-sizing: border-box; /* Incluir padding e borda no tamanho total */
+        }
+
+        #graficoResultados {
+            display: block;
+            width: 100% !important; /* Garante que o canvas seja responsivo dentro do container */
+            height: auto !important; /* Mantém a proporção */
+        }
+
+        .container-grafico h3 {
+            margin-top: 0; /* Remover margem superior do título */
+            margin-bottom: 10px;
+            font-size: 1.2em; /* Ajustar tamanho do título */
+        }
+
+        .container-grafico p {
+            margin-top: 10px;
+            font-size: 0.9em; /* Ajustar tamanho do parágrafo */
+        }
+
+         .texto-atualizacao {
+            font-size: 0.8em; /* Tamanho menor para o texto */
+            color: #555; /* Cor mais discreta */
+            margin-top: 5px; /* Espaço acima do texto */
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <div class="container-grafico">
+        <h3>Resultados da Apuração - Goiana, PE (Prefeito)</h3>
+        <canvas id="graficoResultados"></canvas>
+        <p>Percentual de Seções Totalizadas: <strong id="percentualTotalizado"> Aguardando dados... </strong></p>
+         <p class="texto-atualizacao">Dados atualizados a partir do TSE</p>
+    </div>
+
+    <script>
+        // --- CÓDIGO JAVASCRIPT PARA BUSCAR DADOS E DESENHAR O GRÁFICO ---
+
+        // Dados de Teste (Opcional - mantido para referência da estrutura)
+        const dadosDeTeste = {
+          "ele": 6140, "tpabr": "mu", "cdabr": "24236", "dg": "03/05/2025", "hg": "10:30:00", "and": "p", "carg": [ { "cd": 11, "nm": "PREFEITO", "nv": 1, "agr": [ { "n": 123, "nm": "Coligação Teste 1", "tp": "c", "cand": [ { "n": 10, "nm": "Candidato A", "vap": 5000, "pvap": 45.00, "st": "Não eleito" }, { "n": 20, "nm": "Candidato B", "vap": 7000, "pvap": 55.00, "st": "Não eleito" } ] } ] } ], "s": { "ts": 100, "st": 50, "pst": 50.00, "pstn": 50.000000000 }, "v": { "vv": 12000, "vb": 500, "vn": 300, "vnt": 0, "van": 0, "vansj": 0, "tv": 12800 }
+        };
+
+
+        // Função para processar os dados e atualizar o gráfico
+        function atualizarGrafico(dadosApuracao) {
+            console.log(">>> Início da função atualizarGrafico com dados do TSE");
+
+            const cargoPrefeito = dadosApuracao.carg.find(cargo => cargo.cd === 11);
+            if (!cargoPrefeito) {
+                console.error("Dados do cargo de Prefeito não encontrados no JSON.");
+                document.getElementById('percentualTotalizado').textContent = 'Erro ao carregar dados do cargo.';
+                return;
+            }
+
+            const nomes = [];
+            const votos = [];
+            // Extrai os dados dos candidatos
+            if (cargoPrefeito.agr && cargoPrefeito.agr.length > 0) {
+                cargoPrefeito.agr.forEach(agremiao => {
+                     if (agremiao.cand && agremiao.cand.length > 0) {
+                        agremiao.cand.forEach(candidato => {
+                             nomes.push(candidato.nm); // Nome do candidato
+                             votos.push(candidato.vap); // Votos computados
+                        });
+                    }
+                });
+            } else {
+                console.warn("Nenhuma agremiação/candidato encontrado para o cargo de Prefeito nos dados do TSE.");
+                 document.getElementById('percentualTotalizado').textContent = 'Nenhum candidato encontrado para o cargo nos dados do TSE.';
+                return;
+            }
+
+
+            const ctx = document.getElementById('graficoResultados').getContext('2d');
+
+            // Destruir gráfico anterior se existir (para atualizações)
+            if (window.graficoDePizza) {
+                window.graficoDePizza.destroy();
+            }
+
+            // Criar o novo gráfico de pizza
+            window.graficoDePizza = new Chart(ctx, {
+                type: 'pie', // Gráfico de pizza
+                data: {
+                    labels: nomes, // Nomes dos candidatos na legenda
+                    datasets: [{
+                        label: 'Votos',
+                        data: votos, // Quantidade de votos para o tamanho das fatias
+                        backgroundColor: [
+                            '#024796', // <-- Cor para o Candidato A
+                            '#ff0000',  // <-- Cor para o Candidato B
+                            'rgba(75, 192, 192, 0.8)', // Cores adicionais para mais candidatos (se houver)
+                            'rgba(255, 205, 86, 0.8)',
+                            'rgba(153, 102, 255, 0.8)'
+                        ],
+                        borderColor: '#ffffff', // Borda branca para separar as fatias
+                        borderWidth: 2 // Espessura da borda
+                    }]
+                },
+                options: {
+                    responsive: true, // Mantém a responsividade para o contêiner do iframe
+                    maintainAspectRatio: false, // Permite controlar o tamanho com CSS/container
+                    plugins: {
+                        legend: {
+                            position: 'right', // Posição da legenda
+                            labels: { boxWidth: 20 }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Distribuição de Votos Apurados' // Título do gráfico
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+                                    return `${label}: ${value} votos (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Atualizar o percentual de seções totalizadas
+            const percentualTotalizadoSpan = document.getElementById('percentualTotalizado');
+            if (dadosApuracao.s && dadosApuracao.s.pst !== undefined) {
+                percentualTotalizadoSpan.textContent = dadosApuracao.s.pst.toFixed(2) + '%';
+            } else if (dadosApuracao.s && dadosApuracao.s.st !== undefined && dadosApuracao.s.ts !== undefined && dadosApuracao.s.ts > 0) {
+                 const calculadoPst = ((dadosApuracao.s.st / dadosApuracao.s.ts) * 100).toFixed(2);
+                 percentualTotalizadoSpan.textContent = calculadoPst + '% (Seções totalizadas)';
+            } else {
+                 percentualTotalizadoSpan.textContent = 'Dados de totalização não disponíveis.';
+            }
+
+            const horaTotalizacao = dadosApuracao.ht || 'N/A';
+            console.log("Hora da totalização:", horaTotalizacao);
+
+            // Opcional: Parar a atualização se a apuração finalizar
+            if (dadosApuracao.and === 'f') {
+                clearInterval(window.intervaloAtualizacao); // Usa o window.intervaloAtualizacao definido abaixo
+                console.log("Apuração finalizada. Atualização automática parada.");
+                document.getElementById('percentualTotalizado').textContent += ' (Totalização Finalizada)';
+            }
+        }
+
+        // --- Lógica para carregar os dados do TSE (ATIVA para uso no CMS no dia da eleição) ---
+
+        // URL real dos dados de apuração do TSE para Goiana, PE - Prefeito
+        const urlDadosReais = "https://resultados.tse.jus.br/oficial/ele2024/e6140/dados/pe/24236-c0011-e6140-u.json";
+
+        function buscarDadosTSE() {
+            fetch(urlDadosReais)
+                .then(response => {
+                    // Tratar erro 403 ou outros (fora do horário de apuração, arquivo não encontrado, etc.)
+                    if (response.status === 403 || response.status === 404) {
+                         console.warn(`Arquivo não disponível ou apuração não iniciada/finalizada. Status: ${response.status}.`);
+                         document.getElementById('percentualTotalizado').innerHTML = 'Aguardando início da apuração...';
+                         // Nao desenha grafico se nao tem dados disponiveis (ou exibe mensagem opcional)
+                         if(window.graficoDePizza) {
+                             window.graficoDePizza.destroy(); // Remove grafico anterior se houver
+                         }
+                         return Promise.reject(`Erro esperado ${response.status}`); // Sai da cadeia de promessas
+                    }
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(dadosReais => {
+                    atualizarGrafico(dadosReais);
+                    console.log("Dados atualizados do TSE.");
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar dados do TSE:", error);
+                    // Só atualiza mensagem de erro se nao for um 403/404 esperado antes da apuracao
+                    if (!(error.message && (error.message.includes('403') || error.message.includes('404')))) {
+                         document.getElementById('percentualTotalizado').textContent = 'Erro ao carregar dados.';
+                    }
+                });
+        }
+
+        // Chamar a função para buscar os dados a cada 60 segundos (60000 ms) durante a apuração
+        // Guardamos o ID do intervalo em uma variável global para poder parar depois
+        window.intervaloAtualizacao = setInterval(buscarDadosTSE, 60000); // Tenta buscar a cada 60 segundos
+
+        // Chamar a função uma vez ao carregar a postagem
+        // Adicionar um pequeno delay para garantir que o canvas exista no DOM da postagem
+        setTimeout(buscarDadosTSE, 500); // Tenta buscar a primeira vez após 500 ms
+
+
+        </script>
+
+    </body>
+</html>
