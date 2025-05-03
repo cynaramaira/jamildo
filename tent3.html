@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gráfico de Resultados (Teste de Estilo - Tamanho Fixo)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .container-grafico {
+            width: 100%; /* Largura do container (pode ser afetada pela largura fixa do canvas) */
+            max-width: 1920px; /* Ajuste a largura máxima para acomodar o canvas */
+            margin: 20px auto; /* Centralizar o container e dar espaçamento */
+            text-align: center; /* Centralizar o texto */
+             /* Adicione uma borda temporária para visualizar o container */
+            /* border: 1px solid red; */
+        }
+
+        #graficoResultados {
+            display: block; /* Para que o margin auto funcione se for o canvas diretamente */
+            /* As dimensões são definidas pelos atributos width e height abaixo */
+             /* Adicione uma borda temporária para visualizar o canvas */
+            /* border: 1px solid blue; */
+        }
+
+        .container-grafico h3 {
+            margin-bottom: 10px;
+        }
+
+        .container-grafico p {
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+
+        /* Pode adicionar mais estilos conforme a necessidade */
+    </style>
+</head>
+<body>
+
+    <div class="container-grafico">
+        <h3>Resultados da Apuração - Goiana, PE (Prefeito)</h3>
+        <canvas id="graficoResultados" width="1920" height="1080"></canvas>
+        <p>Percentual de Seções Totalizadas: <strong id="percentualTotalizado">Dados de teste</strong></p>
+    </div>
+
+    <script>
+        // --- SEU CÓDIGO JAVASCRIPT AQUI ---
+
+        // Dados de Teste (Usaremos este objeto para desenhar o gráfico AGORA)
+        const dadosDeTeste = {
+            "ele": 6140,
+            "tpabr": "mu",
+            "cdabr": "24236",
+            "dg": "03/05/2025",
+            "hg": "10:30:00",
+            "and": "p",
+            "carg": [
+                {
+                    "cd": 11,
+                    "nm": "PREFEITO",
+                    "nv": 1,
+                    "agr": [
+                        {
+                            "n": 123,
+                            "nm": "Coligação Teste 1",
+                            "tp": "c",
+                            "cand": [
+                                { "n": 10, "nm": "Candidato A", "vap": 5000, "pvap": 45.00, "st": "Não eleito" }, // Candidato A com 5000 votos
+                                { "n": 20, "nm": "Candidato B", "vap": 7000, "pvap": 55.00, "st": "Não eleito" }  // Candidato B com 7000 votos
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "s": { "ts": 100, "st": 50, "pst": 50.00, "pstn": 50.000000000 }, // Dados de totalização de teste
+            "v": { "vv": 12000, "vb": 500, "vn": 300, "vnt": 0, "van": 0, "vansj": 0, "tv": 12800 }
+        };
+
+
+        // Função para processar os dados e atualizar o gráfico
+        function atualizarGrafico(dadosApuracao) {
+            console.log(">>> Início da função atualizarGrafico"); // Log no início
+
+            const cargoPrefeito = dadosApuracao.carg.find(cargo => cargo.cd === 11);
+            if (!cargoPrefeito) {
+                console.error("Dados do cargo de Prefeito não encontrados no JSON.");
+                document.getElementById('percentualTotalizado').textContent = 'Erro ao carregar dados do cargo.';
+                console.log("<<< Fim da função atualizarGrafico (erro)"); // Log no fim (erro)
+                return;
+            }
+
+            const nomes = [];
+            const votos = [];
+            // Extrai os dados dos candidatos da estrutura de teste/real
+            if (cargoPrefeito.agr && cargoPrefeito.agr.length > 0) {
+                cargoPrefeito.agr.forEach(agremiao => {
+                    if (agremiao.cand && agremiao.cand.length > 0) {
+                        agremiao.cand.forEach(candidato => {
+                            nomes.push(candidato.nm); // Nome do candidato
+                            votos.push(candidato.vap); // Votos computados
+                        });
+                    }
+                });
+            } else {
+                console.warn("Nenhuma agremiação/candidato encontrado para o cargo de Prefeito.");
+                document.getElementById('percentualTotalizado').textContent = 'Nenhum candidato encontrado para o cargo.';
+                console.log("<<< Fim da função atualizarGrafico (sem candidatos)"); // Log no fim (sem candidatos)
+                return;
+            }
+
+            const ctx = document.getElementById('graficoResultados').getContext('2d');
+
+            if (window.graficoDePizza) {
+                console.log("Destruindo gráfico anterior."); // Log antes de destruir
+                window.graficoDePizza.destroy();
+                console.log("Gráfico anterior destruído."); // Log depois de destruir
+            }
+
+            console.log("Criando novo gráfico."); // Log antes de criar
+            window.graficoDePizza = new Chart(ctx, {
+                type: 'pie', // Gráfico de pizza
+                data: {
+                    labels: nomes, // Nomes dos candidatos na legenda
+                    datasets: [{
+                        label: 'Votos',
+                        data: votos, // Quantidade de votos para o tamanho das fatias
+                        backgroundColor: [
+                            '#024796', // <-- Cor para o Candidato A
+                            '#ff0000',  // <-- Cor para o Candidato B
+                            'rgba(75, 192, 192, 0.8)', // Cores adicionais para mais candidatos (se houver)
+                            'rgba(255, 205, 86, 0.8)',
+                            'rgba(153, 102, 255, 0.8)'
+                        ],
+                        borderColor: '#ffffff', // Borda branca para separar as fatias
+                        borderWidth: 2 // Espessura da borda
+                    }]
+                },
+                options: {
+                    // responsive: true, // Desative ou ajuste se usar tamanho fixo
+                    // maintainAspectRatio: false, // Desative ou ajuste se usar tamanho fixo
+                    plugins: {
+                        legend: {
+                            position: 'right', // Posição da legenda (ajuste conforme sua preferência)
+                            labels: {
+                                boxWidth: 20 // Largura do quadrado de cor na legenda
+                                // Você pode adicionar fonte e cor aqui se precisar, como vimos antes
+                                // font: { family: 'Sua Fonte, sans-serif', size: 12, weight: 'bold' },
+                                // color: '#333'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Distribuição de Votos Apurados (Teste)', // Título do gráfico (indicando que é teste)
+                            // Você pode adicionar fonte e cor aqui
+                            // font: { family: 'Sua Fonte, sans-serif', size: 16, weight: 'bold' },
+                            // color: '#000'
+                        },
+                        tooltip: { // Configuração para mostrar informações ao passar o mouse
+                            // Você pode adicionar estilo de tooltip aqui
+                            // backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            // bodyColor: '#ffffff',
+                            // titleColor: '#ffffff',
+                            // bodyFont: { family: 'Sua Fonte, sans-serif', size: 12 },
+                            // titleFont: { family: 'Sua Fonte, sans-serif', size: 14, weight: 'bold' },
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+                                    return `${label}: ${value} votos (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            console.log("Novo gráfico criado."); // Log depois de criar
+
+            // Atualizar o percentual de seções totalizadas com dado de teste
+            const percentualTotalizadoSpan = document.getElementById('percentualTotalizado');
+            if (dadosApuracao.s && dadosApuracao.s.pst !== undefined) {
+                percentualTotalizadoSpan.textContent = dadosApuracao.s.pst.toFixed(2) + '%';
+            } else if (dadosApuracao.s && dadosApuracao.s.st !== undefined && dadosApuracao.s.ts !== undefined && dadosApuracao.s.ts > 0) {
+                 const calculadoPst = ((dadosApuracao.s.st / dadosApuracao.s.ts) * 100).toFixed(2);
+                 percentualTotalizadoSpan.textContent = calculadoPst + '% (Seções totalizadas - Teste)'; // Indicando que é dado de teste
+
+            }
+            else {
+                 percentualTotalizadoSpan.textContent = 'Dados de totalização de teste não disponíveis.';
+            }
+
+            const horaTotalizacao = dadosApuracao.ht || 'N/A';
+            console.log("Hora da totalização (Teste):", horaTotalizacao);
+
+            console.log("<<< Fim da função atualizarGrafico (sucesso)"); // Log no fim (sucesso)
+        }
+
+        // --- Lógica para carregar os dados do TSE (COMPLETAMENTE DESATIVADA PARA TESTE DE ESTILO) ---
+        /* ... (código comentado) ... */
+
+
+        // --- ATIVE ESTA LINHA para usar os dadosDeTeste para estilizar! ---
+        // Esta linha chama a função atualizarGrafico com os dados de teste assim que o script roda.
+        // Usamos um pequeno delay para garantir que o canvas exista no DOM.
+        setTimeout(function() {
+            console.log("Chamando atualizarGrafico com dados de teste."); // Log antes de chamar
+            atualizarGrafico(dadosDeTeste); // <--- CHAMADA ATIVA PARA TESTE/ESTILIZAÇÃO!
+            console.log("setTimeout concluído."); // Log depois da chamada
+        }, 100); // Pequeno delay de 100ms
+
+        </script>
+
+    </body>
+</html>
