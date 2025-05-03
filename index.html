@@ -2,75 +2,78 @@
 <html>
 <head>
     <title>Gráfico de Resultados (Teste de Estilo - Tamanho Fixo)</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Estilos para o body - úteis para iframe */
+        body {
+            margin: 0; /* Remover margem padrão */
+            padding: 0; /* Remover padding padrão */
+            font-family: sans-serif; /* Definir uma fonte padrão */
+            background-color: #fff; /* Cor de fundo opcional */
+        }
+
+        /* Estilo para a logo - fora do container principal */
+        .logo-topo {
+            max-width: 150px; /* Ajuste o tamanho máximo conforme necessário */
+            height: auto; /* Mantenha a proporção */
+            display: block; /* Garante que a imagem ocupe sua própria linha */
+            margin: 20px auto 10px auto; /* Centraliza a logo e adiciona margem */
+            /* A margem superior/inferior pode ser ajustada aqui */
+        }
+
+
         .container-grafico {
-            width: 100%; /* Largura do container (pode ser afetada pela largura fixa do canvas) */
-            max-width: 1920px; /* Ajuste a largura máxima para acomodar o canvas */
-            margin: 20px auto; /* Centralizar o container e dar espaçamento */
-            text-align: center; /* Centralizar o texto */
-             /* Adicione uma borda temporária para visualizar o container */
+            width: 100%; /* Faz o contêiner tentar ocupar a largura total */
+            max-width: 1020px; /* Defina uma largura máxima ligeiramente maior que o canvas (1000px + padding/borda) */
+            margin: 0 auto; /* Centraliza o contêiner na página */
+            text-align: center; /* Centraliza o texto e elementos inline/inline-block */
+            padding: 10px; /* Adiciona um padding interno */
+            box-sizing: border-box; /* Inclui padding e borda no tamanho total */
+            /* Adicione uma borda temporária para visualizar o container */
             /* border: 1px solid red; */
         }
 
         #graficoResultados {
-            display: block; /* Para que o margin auto funcione se for o canvas diretamente */
-            /* As dimensões são definidas pelos atributos width e height abaixo */
+            display: block; /* Essencial para que o margin auto funcione no próprio canvas se ele estiver diretamente no body ou para controle de layout */
+            /* As dimensões (1000x500) são definidas pelos atributos width e height no HTML */
+            /* Remover ou comentar as regras CSS de width/height que podem conflitar com os atributos HTML */
+            /* width: 100% !important; */
+            /* height: auto !important; */
              /* Adicione uma borda temporária para visualizar o canvas */
             /* border: 1px solid blue; */
         }
 
-        .container-grafico h3 {
+        .container-grafico h2 { /* Ajustado para h2 */
             margin-bottom: 10px;
+            font-size: 1.2em; /* Ajuste o tamanho da fonte do título */
+            /* Outros estilos de fonte ou cor para o título */
         }
 
         .container-grafico p {
             margin-top: 10px;
-            font-size: 1.1em;
+            font-size: 0.9em; /* Ajuste o tamanho da fonte do parágrafo */
         }
 
-        /* Pode adicionar mais estilos conforme a necessidade */
+        .texto-atualizacao {
+            font-size: 0.8em; /* Tamanho menor para o texto de rodapé */
+            color: #555; /* Cor mais discreta */
+            margin-top: 5px; /* Espaço acima do texto */
+            /* Outros estilos de fonte ou cor */
+        }
+
+
     </style>
 </head>
 <body>
-<img src="https://cynaramaira.github.io/jamildo/logo.png" alt= "logo do jamildo.com" style= "max-width: 50px; display: block; margin:0 auto 20px auto;">
-    <div class="container-grafico">
-        <h2>Resultados da Apuração - Goiana, PE (Prefeito)</h2>
-        <canvas id="graficoResultados" width="1000" height="500"></canvas>
-        <p>Percentual de Seções Totalizadas: <strong id="percentualTotalizado">Dados de teste</strong></p>
-    </div>
+
+    <img src="https://cynaramaira.github.io/jamildo/logo.png" alt="logo do jamildo.com" class="logo-topo"> <div class="container-grafico"> <h2>Resultados da Apuração - Goiana, PE (Prefeito)</h2> <canvas id="graficoResultados" width="1000" height="500"></canvas> <p>Percentual de Seções Totalizadas: <strong id="percentualTotalizado">Dados de teste</strong></p> <p class="texto-atualizacao">Dados atualizados a partir do TSE</p> </div>
 
     <script>
         // --- SEU CÓDIGO JAVASCRIPT AQUI ---
 
         // Dados de Teste (Usaremos este objeto para desenhar o gráfico AGORA)
         const dadosDeTeste = {
-            "ele": 6140,
-            "tpabr": "mu",
-            "cdabr": "24236",
-            "dg": "03/05/2025",
-            "hg": "10:30:00",
-            "and": "p",
-            "carg": [
-                {
-                    "cd": 11,
-                    "nm": "PREFEITO",
-                    "nv": 1,
-                    "agr": [
-                        {
-                            "n": 123,
-                            "nm": "Coligação Teste 1",
-                            "tp": "c",
-                            "cand": [
-                                { "n": 10, "nm": "Candidato A", "vap": 5000, "pvap": 45.00, "st": "Não eleito" }, // Candidato A com 5000 votos
-                                { "n": 20, "nm": "Candidato B", "vap": 7000, "pvap": 55.00, "st": "Não eleito" }  // Candidato B com 7000 votos
-                            ]
-                        }
-                    ]
-                }
-            ],
-            "s": { "ts": 100, "st": 50, "pst": 50.00, "pstn": 50.000000000 }, // Dados de totalização de teste
-            "v": { "vv": 12000, "vb": 500, "vn": 300, "vnt": 0, "van": 0, "vansj": 0, "tv": 12800 }
+            "ele": 6140, "tpabr": "mu", "cdabr": "24236", "dg": "03/05/2025", "hg": "10:30:00", "and": "p", "carg": [ { "cd": 11, "nm": "PREFEITO", "nv": 1, "agr": [ { "n": 123, "nm": "Coligação Teste 1", "tp": "c", "cand": [ { "n": 10, "nm": "Candidato A", "vap": 5000, "pvap": 45.00, "st": "Não eleito" }, { "n": 20, "nm": "Candidato B", "vap": 7000, "pvap": 55.00, "st": "Não eleito" } ] } ] } ], "s": { "ts": 100, "st": 50, "pst": 50.00, "pstn": 50.000000000 }, "v": { "vv": 12000, "vb": 500, "vn": 300, "vnt": 0, "van": 0, "vansj": 0, "tv": 12800 }
         };
 
 
@@ -194,7 +197,19 @@
         }
 
         // --- Lógica para carregar os dados do TSE (COMPLETAMENTE DESATIVADA PARA TESTE DE ESTILO) ---
-        /* ... (código comentado) ... */
+        /*
+        const urlDadosReais = "..."; // URL real
+
+        function buscarDadosTSE() {
+            // ... (código da função buscarDadosTSE) ...
+        }
+
+        // Desative o setInterval e setTimeout para NÃO tentar buscar dados reais AGORA
+        // const intervaloAtualizacao = setInterval(buscarDadosTSE, 60000);
+        // setTimeout(buscarDadosTSE, 500);
+
+        // ... (resto da lógica de dados reais) ...
+        */
 
 
         // --- ATIVE ESTA LINHA para usar os dadosDeTeste para estilizar! ---
