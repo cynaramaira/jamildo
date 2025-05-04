@@ -80,129 +80,24 @@
         const dadosDeTeste = { ... };
         */
 
-
-        // Função para processar os dados e atualizar o gráfico
-        function atualizarGrafico(dadosApuracao) {
-            console.log(">>> Início da função atualizarGrafico com dados do TSE");
-
-            const cargoPrefeito = dadosApuracao.carg.find(cargo => cargo.cd === 11);
-            if (!cargoPrefeito) {
-                console.error("Dados do cargo de Prefeito não encontrados no JSON.");
-                document.getElementById('percentualTotalizado').textContent = 'Erro ao carregar dados do cargo.';
-                return;
-            }
-
-            const nomes = [];
-            const votos = [];
-            // Extrai os dados dos candidatos
-            if (cargoPrefeito.agr && cargoPrefeito.agr.length > 0) {
-                cargoPrefeito.agr.forEach(agremiao => {
-                     if (agremiao.cand && agremiao.cand.length > 0) {
-                        agremiao.cand.forEach(candidato => {
-                             nomes.push(candidato.nm); // Nome do candidato
-                             votos.push(candidato.vap); // Votos computados
-                        });
-                    }
-                });
-            } else {
-                console.warn("Nenhuma agremiação/candidato encontrado para o cargo de Prefeito nos dados do TSE.");
-                 document.getElementById('percentualTotalizado').textContent = 'Nenhum candidato encontrado para o cargo nos dados do TSE.';
-                return;
-            }
-
-
-            const ctx = document.getElementById('graficoResultados').getContext('2d');
-
-            // Destruir gráfico anterior se existir (para atualizações)
-            if (window.graficoDePizza) {
-                window.graficoDePizza.destroy();
-            }
-
-            // Criar o novo gráfico de pizza
-            window.graficoDePizza = new Chart(ctx, {
-                type: 'pie', // Gráfico de pizza
-                data: {
-                    labels: nomes, // Nomes dos candidatos na legenda
-                    datasets: [{
-                        label: 'Votos',
-                        data: votos, // Quantidade de votos para o tamanho das fatias
-                        backgroundColor: [
-                            '#024796', // <-- Cor para o Candidato A
-                            '#ff0000',  // <-- Cor para o Candidato B
-                            'rgba(75, 192, 192, 0.8)', // Cores adicionais para mais candidatos (se houver)
-                            'rgba(255, 205, 86, 0.8)',
-                            'rgba(153, 102, 255, 0.8)'
-                        ],
-                        borderColor: '#ffffff', // Borda branca para separar as fatias
-                        borderWidth: 2 // Espessura da borda
-                    }]
-                },
-                options: {
-                    responsive: true, // Mantém a responsividade para o contêiner do iframe
-                    maintainAspectRatio: false, // Permite controlar o tamanho com CSS/container
-                    plugins: {
-                        legend: {
-                            position: 'right', // Posição da legenda
-                            labels: { boxWidth: 20 }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Distribuição de Votos Apurados' // Título do gráfico (sem "(Teste)")
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw;
-                                    const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
-                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
-                                    return `${label}: ${value} votos (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Atualizar o percentual de seções totalizadas
-            const percentualTotalizadoSpan = document.getElementById('percentualTotalizado');
-            if (dadosApuracao.s && dadosApuracao.s.pst !== undefined) {
-                percentualTotalizadoSpan.textContent = dadosApuracao.s.pst.toFixed(2) + '%';
-            } else if (dadosApuracao.s && dadosApuracao.s.st !== undefined && dadosApuracao.s.ts !== undefined && dadosApuracao.s.ts > 0) {
-                 const calculadoPst = ((dadosApuracao.s.st / dadosApuracao.s.ts) * 100).toFixed(2);
-                 percentualTotalizadoSpan.textContent = calculadoPst + '% (Seções totalizadas)';
-            } else {
-                 percentualTotalizadoSpan.textContent = 'Dados de totalização não disponíveis.';
-            }
-
-            const horaTotalizacao = dadosApuracao.ht || 'N/A';
-            console.log("Hora da totalização:", horaTotalizacao);
-
-            // Opcional: Parar a atualização se a apuração finalizar
-            if (dadosApuracao.and === 'f') {
-                clearInterval(window.intervaloAtualizacao); // Usa o window.intervaloAtualizacao definido abaixo
-                console.log("Apuração finalizada. Atualização automática parada.");
-                document.getElementById('percentualTotalizado').textContent += ' (Totalização Finalizada)';
-            }
-        }
-
-        // --- Lógica para carregar os dados do TSE (ATIVA para uso no CMS no dia da eleição) ---
-
         // URL real dos dados de apuração do TSE para Goiana, PE - Prefeito
-        const urlDadosReais = "https://resultados.tse.jus.br/oficial/ele2024/6140/dados/pe/pe24236-c0011-e006140-u.json";
+        // URL ATUALIZADA com base na análise do console do app do TSE
+        const urlDadosReais = "https://resultados.tse.jus.br/oficial/ele2024/6140/dados/pe/pe24236-c0011-e006140-u.json"; // <-- URL CORRIGIDA
 
         function buscarDadosTSE() {
+            console.log("Tentando buscar dados do TSE da URL:", urlDadosReais); // Log com a URL atual
+
             fetch(urlDadosReais)
                 .then(response => {
-                    // Tratar erro 403 ou outros (fora do horário de apuração, arquivo não encontrado, etc.)
+                    console.log("Resposta recebida do TSE. Status:", response.status);
+
                     if (response.status === 403 || response.status === 404) {
                          console.warn(`Arquivo não disponível ou apuração não iniciada/finalizada. Status: ${response.status}.`);
                          document.getElementById('percentualTotalizado').innerHTML = 'Aguardando início da apuração...';
-                         // Nao desenha grafico se nao tem dados disponiveis (ou exibe mensagem opcional)
                          if(window.graficoDePizza) {
-                             window.graficoDePizza.destroy(); // Remove grafico anterior se houver
+                             window.graficoDePizza.destroy();
                          }
-                         return Promise.reject(`Erro esperado ${response.status}`); // Sai da cadeia de promessas
+                         return null; // Stop the chain
                     }
                     if (!response.ok) {
                         throw new Error(`Erro HTTP! status: ${response.status}`);
@@ -210,28 +105,48 @@
                     return response.json();
                 })
                 .then(dadosReais => {
-                    atualizarGrafico(dadosReais);
-                    console.log("Dados atualizados do TSE.");
+                    if (dadosReais !== null) {
+                        atualizarGrafico(dadosReais);
+                        console.log("Dados atualizados do TSE.");
+                    }
                 })
                 .catch(error => {
                     console.error("Erro ao buscar dados do TSE:", error);
-                    // Só atualiza mensagem de erro se nao for um 403/404 esperado antes da apuracao
-                    if (!(error.message && (error.message.includes('403') || error.message.includes('404')))) {
-                         document.getElementById('percentualTotalizado').textContent = 'Erro ao carregar dados.';
-                    }
+                     document.getElementById('percentualTotalizado').innerHTML = 'Aguardando início da apuração...';
                 });
         }
 
-        // Chamar a função para buscar os dados a cada 60 segundos (60000 ms) durante a apuração
-        // Guardamos o ID do intervalo em uma variável global para poder parar depois
-        window.intervaloAtualizacao = setInterval(buscarDadosTSE, 60000); // Tenta buscar a cada 60 segundos
+        function atualizarGrafico(dadosApuracao) {
+            console.log(">>> Início da função atualizarGrafico com dados do TSE");
+            const cargoPrefeito = dadosApuracao.carg.find(cargo => cargo.cd === 11);
+            if (!cargoPrefeito) {
+                console.error("Dados do cargo de Prefeito não encontrados no JSON.");
+                document.getElementById('percentualTotalizado').textContent = 'Erro ao carregar dados do cargo.'; return;
+            }
+            const nomes = []; const votos = [];
+            if (cargoPrefeito.agr && cargoPrefeito.agr.length > 0) {
+                cargoPrefeito.agr.forEach(agremiao => {
+                     if (agremiao.cand && agremiao.cand.length > 0) {
+                        agremiao.cand.forEach(candidato => { nomes.push(candidato.nm); votos.push(candidato.vap); });
+                    }
+                });
+            } else { console.warn("Nenhuma agremiação/candidato encontrado para o cargo de Prefeito nos dados do TSE."); document.getElementById('percentualTotalizado').textContent = 'Nenhum candidato encontrado para o cargo nos dados do TSE.'; return; }
+            const ctx = document.getElementById('graficoResultados').getContext('2d');
+            if (window.graficoDePizza) { window.graficoDePizza.destroy(); }
+            window.graficoDePizza = new Chart(ctx, {
+                type: 'pie', data: { labels: nomes, datasets: [{ label: 'Votos', data: votos, backgroundColor: [ '#024796', '#ff0000', 'rgba(75, 192, 192, 0.8)', 'rgba(255, 205, 86, 0.8)', 'rgba(153, 102, 255, 0.8)' ], borderColor: '#ffffff', borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 20 } }, title: { display: true, text: 'Distribuição de Votos Apurados' }, tooltip: { callbacks: { label: function(context) { const label = context.label || ''; const value = context.raw; const total = context.dataset.data.reduce((sum, val) => sum + val, 0); const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0; return `${label}: ${value} votos (${percentage}%)`; } } } } }
+            });
+            const percentualTotalizadoSpan = document.getElementById('percentualTotalizado');
+            if (dadosApuracao.s && dadosApuracao.s.pst !== undefined) { percentualTotalizadoSpan.textContent = dadosApuracao.s.pst.toFixed(2) + '%'; } else if (dadosApuracao.s && dadosApuracao.s.st !== undefined && dadosApuracao.s.ts !== undefined && dadosApuracao.s.ts > 0) { const calculadoPst = ((dadosApuracao.s.st / dadosApuracao.s.ts) * 100).toFixed(2); percentualTotalizadoSpan.textContent = calculadoPst + '% (Seções totalizadas)'; } else { percentualTotalizadoSpan.textContent = 'Dados de totalização não disponíveis.'; }
+            const horaTotalizacao = dadosApuracao.ht || 'N/A'; console.log("Hora da totalização:", horaTotalizacao);
+            if (dadosApuracao.and === 'f') { clearInterval(window.intervaloAtualizacao); console.log("Apuração finalizada. Atualização automática parada."); document.getElementById('percentualTotalizado').textContent += ' (Totalização Finalizada)'; }
+        }
 
-        // Chamar a função uma vez ao carregar a postagem
-        // Adicionar um pequeno delay para garantir que o canvas exista no DOM da postagem
-        setTimeout(buscarDadosTSE, 500); // Tenta buscar a primeira vez após 500 ms
+        window.intervaloAtualizacao = setInterval(buscarDadosTSE, 60000);
+        setTimeout(buscarDadosTSE, 500);
 
+    </script>
 
-        </script>
-
-    </body>
+</body>
 </html>
